@@ -53,11 +53,6 @@ export default function App() {
 
   const projects = stats ? [ALL_PROJECTS, ...stats.projects] : [ALL_PROJECTS]
 
-  const allTypes = useMemo(() => {
-    const types = [...new Set(observations.map(o => o.type))]
-    return types.sort()
-  }, [observations])
-
   const baseList = useMemo(() => {
     const list = searchResults ?? observations
     return selectedProject === ALL_PROJECTS ? list : list.filter(o => o.project === selectedProject)
@@ -100,121 +95,122 @@ export default function App() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center">
-      <span className="text-zinc-400 text-sm">Conectando con Engram...</span>
+    <div className="min-h-screen bg-bg flex items-center justify-center">
+      <span className="font-mono text-xs text-muted">connecting to engram...</span>
     </div>
   )
 
   if (error) return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center flex-col gap-3">
-      <span className="text-red-500 font-semibold">No se pudo conectar con Engram</span>
-      <span className="text-zinc-400 text-sm">{error}</span>
-      <p className="text-zinc-400 text-xs">Asegurate de tener corriendo: <code className="bg-zinc-800 text-zinc-200 px-2 py-1 rounded">engram serve</code></p>
+    <div className="min-h-screen bg-bg flex items-center justify-center flex-col gap-3">
+      <span className="font-mono text-xs text-red-500">// connection failed</span>
+      <span className="font-mono text-[10px] text-muted">{error}</span>
+      <span className="font-mono text-[10px] text-muted mt-2">
+        run: <span className="text-accent">engram serve</span>
+      </span>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex">
+    <div className="min-h-screen bg-bg flex">
       {/* Sidebar */}
-      <aside className="w-56 shrink-0 border-r border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 flex flex-col">
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
-          <span className="font-bold text-zinc-900 dark:text-white text-sm tracking-wide">engram</span>
-          <span className="text-zinc-400 text-xs ml-1">explorer</span>
+      <aside className="w-52 shrink-0 border-r border-border bg-surface flex flex-col">
+        <div className="p-4 border-b border-border">
+          <span className="font-mono text-sm font-medium text-text">engram</span>
+          <span className="font-mono text-xs text-muted ml-1">/ explorer</span>
         </div>
 
-        <nav className="p-2 flex flex-col gap-1">
+        <nav className="p-2 flex flex-col gap-0.5 mt-1">
           {(['observaciones', 'sesiones', 'pendientes'] as Tab[]).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`text-left px-3 py-2 rounded-lg text-sm capitalize transition-colors ${
+              className={`text-left px-3 py-2 text-xs font-mono transition-colors ${
                 activeTab === tab
-                  ? 'bg-zinc-100 dark:bg-zinc-700 text-zinc-900 dark:text-white font-medium'
-                  : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                  ? 'bg-accent/10 text-accent'
+                  : 'text-muted hover:text-text hover:bg-surface-hover'
               }`}
             >
-              {tab === 'pendientes' ? `pendientes (${pendingItems.length})` : tab}
+              {tab === 'pendientes' ? `${tab} (${pendingItems.length})` : tab}
             </button>
           ))}
         </nav>
 
-        <div className="p-3 border-t border-zinc-100 dark:border-zinc-700 mt-2">
-          <p className="text-xs text-zinc-400 font-medium mb-2 uppercase tracking-wider px-1">Proyectos</p>
+        <div className="p-3 border-t border-border mt-3">
+          <p className="font-mono text-[10px] text-muted uppercase tracking-widest mb-2 px-1">proyectos</p>
           <div className="flex flex-col gap-0.5">
             {projects.map(p => (
               <button
                 key={p}
                 onClick={() => setSelectedProject(p)}
-                className={`text-left px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                className={`text-left px-3 py-1.5 text-xs font-mono transition-colors ${
                   selectedProject === p
-                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium'
-                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    ? 'text-accent bg-accent/10'
+                    : 'text-muted hover:text-text hover:bg-surface-hover'
                 }`}
               >
-                {p}
+                {selectedProject === p ? '> ' : '  '}{p}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="mt-auto p-3 border-t border-zinc-100 dark:border-zinc-700">
-          <p className="text-xs text-zinc-400">
-            Actualizado {lastRefresh.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+        <div className="mt-auto p-3 border-t border-border">
+          <p className="font-mono text-[10px] text-muted">
+            sync {lastRefresh.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
           </p>
         </div>
       </aside>
 
       {/* Main */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 px-6 py-4 flex items-center justify-between gap-4">
-          <h1 className="text-base font-semibold text-zinc-900 dark:text-white capitalize">
-            {activeTab === 'pendientes' ? 'Pendientes' : activeTab === 'sesiones' ? 'Sesiones' : selectedProject === ALL_PROJECTS ? 'Todas las observaciones' : selectedProject}
-          </h1>
+        <header className="bg-surface border-b border-border px-6 py-3 flex items-center justify-between gap-4">
+          <span className="font-mono text-xs text-muted">
+            {activeTab === 'pendientes' ? 'pendientes'
+              : activeTab === 'sesiones' ? 'sesiones'
+              : selectedProject === ALL_PROJECTS ? 'todas las observaciones'
+              : selectedProject}
+          </span>
           {activeTab === 'observaciones' && (
             <input
               type="search"
-              placeholder="Buscar en Engram..."
+              placeholder="buscar..."
               value={searchQuery}
               onChange={e => handleSearch(e.target.value)}
-              className="w-64 text-sm px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-56 font-mono text-xs px-3 py-1.5 bg-bg border border-border text-text placeholder-muted focus:outline-none focus:border-accent/50"
             />
           )}
         </header>
 
-        {/* Stats */}
         {stats && (
-          <div className="px-6 py-3 grid grid-cols-3 gap-3 border-b border-zinc-100 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50">
-            <StatCard label="Sesiones" value={stats.total_sessions} />
-            <StatCard label="Observaciones" value={stats.total_observations} />
-            <StatCard label="Prompts" value={stats.total_prompts} />
+          <div className="grid grid-cols-3 border-b border-border">
+            <StatCard label="sesiones" value={stats.total_sessions} />
+            <StatCard label="observaciones" value={stats.total_observations} />
+            <StatCard label="prompts" value={stats.total_prompts} />
           </div>
         )}
 
-        {/* Chart — full width, below stats */}
         {activeTab === 'observaciones' && (
-          <TypeChart
-            observations={baseList}
-            selectedType={selectedType}
-            onTypeClick={handleTypeClick}
-          />
+          <TypeChart observations={baseList} selectedType={selectedType} onTypeClick={handleTypeClick} />
         )}
 
-
-        {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === 'observaciones' && (
             <>
-              {searching && <p className="text-sm text-zinc-400 mb-4">Buscando...</p>}
+              {searching && <p className="font-mono text-xs text-muted mb-4">// searching...</p>}
               {searchResults !== null && !searching && (
-                <p className="text-sm text-zinc-400 mb-4">{searchResults.length} resultados para "{searchQuery}"</p>
+                <p className="font-mono text-xs text-muted mb-4">
+                  // {searchResults.length} results for "{searchQuery}"
+                </p>
               )}
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-px bg-border">
                 {filtered.map(obs => (
-                  <ObservationCard key={obs.id} obs={obs} onClick={setSelectedObs} />
+                  <div key={obs.id} className="bg-bg">
+                    <ObservationCard obs={obs} onClick={setSelectedObs} />
+                  </div>
                 ))}
               </div>
               {filtered.length === 0 && (
-                <p className="text-zinc-400 text-sm text-center mt-12">No hay observaciones para este filtro.</p>
+                <p className="font-mono text-xs text-muted text-center mt-12">// no observations found</p>
               )}
             </>
           )}
@@ -226,20 +222,20 @@ export default function App() {
           {activeTab === 'pendientes' && (
             <div className="flex flex-col gap-8 max-w-2xl">
               {pendingItems.length === 0 ? (
-                <p className="text-zinc-400 text-sm">No se encontraron next steps en los session summaries.</p>
+                <p className="font-mono text-xs text-muted">// no next steps found in session summaries</p>
               ) : (
                 Object.entries(pendingByProject).map(([project, items]) => (
-                  <div key={project} className="flex flex-col gap-3">
-                    <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">{project}</h2>
+                  <div key={project} className="flex flex-col gap-2">
+                    <p className="font-mono text-[10px] text-muted uppercase tracking-widest mb-1">{project}</p>
                     {items.map((item, i) => (
                       <div
                         key={i}
-                        className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 flex items-start gap-3"
+                        className="bg-surface border border-border p-4 flex items-start gap-3 hover:bg-surface-hover transition-colors"
                       >
-                        <div className="mt-0.5 w-4 h-4 shrink-0 rounded border-2 border-zinc-300 dark:border-zinc-600" />
+                        <div className="mt-1 w-3 h-3 shrink-0 border border-muted" />
                         <div className="flex flex-col gap-1">
-                          <p className="text-sm text-zinc-800 dark:text-zinc-200">{item.text}</p>
-                          <span className="text-xs text-zinc-400">
+                          <p className="text-sm text-text leading-relaxed">{item.text}</p>
+                          <span className="font-mono text-[10px] text-muted">
                             {new Date(item.date).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}
                           </span>
                         </div>

@@ -1,2 +1,24 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-bg:            #0A0B0E;
+  --color-surface:       #111318;
+  --color-surface-hover: #161A22;
+  --color-border:        #1E2231;
+  --color-text:          #C4CCD8;
+  --color-muted:         #4B5470;
+  --color-accent:        #6366F1;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}

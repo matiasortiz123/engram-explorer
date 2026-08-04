@@ -19,9 +19,9 @@ export function TypeChart({ observations, selectedType, onTypeClick }: TypeChart
   if (sorted.length === 0) return null
 
   return (
-    <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/30">
-      <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">Distribución por tipo</p>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-8 gap-y-2">
+    <div className="px-6 py-4 border-b border-border bg-surface/50">
+      <p className="font-mono text-[10px] text-muted uppercase tracking-widest mb-3">distribución</p>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-2">
         {sorted.map(([type, count]) => {
           const isActive = selectedType === type
           return (
@@ -29,20 +29,18 @@ export function TypeChart({ observations, selectedType, onTypeClick }: TypeChart
               key={type}
               onClick={() => onTypeClick(type)}
               className={`flex items-center gap-2 group text-left transition-opacity ${
-                selectedType && !isActive ? 'opacity-40' : 'opacity-100'
+                selectedType && !isActive ? 'opacity-30' : 'opacity-100'
               }`}
             >
-              <div className="shrink-0">
-                <TypeBadge type={type} />
-              </div>
+              <div className="shrink-0"><TypeBadge type={type} /></div>
               <div className="flex-1 min-w-0 flex items-center gap-1.5">
-                <div className="flex-1 bg-zinc-100 dark:bg-zinc-700 rounded-full h-1.5 overflow-hidden">
+                <div className="flex-1 bg-border rounded-none h-px overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all ${isActive ? 'bg-blue-500' : 'bg-zinc-400 dark:bg-zinc-500 group-hover:bg-blue-400'}`}
+                    className={`h-full transition-all ${isActive ? 'bg-accent' : 'bg-muted group-hover:bg-accent/60'}`}
                     style={{ width: `${(count / max) * 100}%` }}
                   />
                 </div>
-                <span className="text-xs text-zinc-400 shrink-0 w-4 text-right">{count}</span>
+                <span className="font-mono text-[10px] text-muted w-4 text-right shrink-0">{count}</span>
               </div>
             </button>
           )

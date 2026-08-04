@@ -6,11 +6,8 @@ import { TypeBadge } from './TypeBadge'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-AR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
   })
 }
 
@@ -21,9 +18,7 @@ interface ObservationModalProps {
 
 export function ObservationModal({ obs, onClose }: ObservationModalProps) {
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
@@ -32,47 +27,42 @@ export function ObservationModal({ obs, onClose }: ObservationModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Drawer */}
-      <div className="relative ml-auto w-full max-w-2xl h-full bg-white dark:bg-zinc-900 shadow-2xl flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 p-6 border-b border-zinc-200 dark:border-zinc-700">
+      <div className="relative ml-auto w-full max-w-2xl h-full bg-surface border-l border-border shadow-2xl flex flex-col overflow-hidden">
+        <div className="flex items-start justify-between gap-4 p-6 border-b border-border">
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <TypeBadge type={obs.type} />
-              <span className="text-xs text-zinc-400">{obs.project}</span>
+              <span className="font-mono text-[10px] text-muted">{obs.project}</span>
             </div>
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 leading-snug">
-              {obs.title}
-            </h2>
-            <span className="text-xs text-zinc-400">{formatDate(obs.created_at)}</span>
+            <h2 className="text-base font-medium text-text leading-snug">{obs.title}</h2>
+            <span className="font-mono text-[10px] text-muted">{formatDate(obs.created_at)}</span>
           </div>
           <button
             onClick={onClose}
-            className="shrink-0 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xl leading-none"
+            className="shrink-0 font-mono text-muted hover:text-text transition-colors text-sm"
           >
-            ✕
+            [esc]
           </button>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="prose prose-sm prose-zinc dark:prose-invert max-w-none">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {obs.content}
-            </ReactMarkdown>
+          <div className="prose prose-sm prose-invert max-w-none
+            prose-headings:font-mono prose-headings:text-text prose-headings:font-medium
+            prose-p:text-text/80 prose-p:leading-relaxed
+            prose-strong:text-text prose-strong:font-medium
+            prose-code:font-mono prose-code:text-accent prose-code:bg-accent/10 prose-code:px-1 prose-code:rounded-none
+            prose-li:text-text/80
+            prose-a:text-accent prose-a:no-underline hover:prose-a:underline">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{obs.content}</ReactMarkdown>
           </div>
         </div>
 
         {obs.topic_key && (
-          <div className="px-6 py-3 border-t border-zinc-100 dark:border-zinc-700">
-            <span className="text-xs text-zinc-400">topic: </span>
-            <code className="text-xs text-zinc-500 dark:text-zinc-400">{obs.topic_key}</code>
+          <div className="px-6 py-3 border-t border-border">
+            <span className="font-mono text-[10px] text-muted">topic_key: </span>
+            <span className="font-mono text-[10px] text-accent">{obs.topic_key}</span>
           </div>
         )}
       </div>
