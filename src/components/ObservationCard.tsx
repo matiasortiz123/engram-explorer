@@ -10,7 +10,7 @@ export function ObservationCard({ obs, onClick }: ObservationCardProps) {
   return (
     <div
       onClick={() => onClick(obs)}
-      className="bg-surface border border-border p-4 flex flex-col gap-3 cursor-pointer hover:bg-surface-hover hover:border-accent/30 transition-colors"
+      className="bg-surface border border-border p-4 flex flex-col gap-3 flex-1 cursor-pointer hover:bg-surface-hover hover:border-accent/30 transition-colors"
     >
       <div className="flex items-start justify-between gap-2">
         <TypeBadge type={obs.type} />
@@ -19,7 +19,7 @@ export function ObservationCard({ obs, onClick }: ObservationCardProps) {
         </span>
       </div>
 
-      <h3 className="text-sm font-medium text-text leading-snug">
+      <h3 className="text-sm font-medium text-text leading-snug flex-1">
         {obs.title}
       </h3>
 

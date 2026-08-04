@@ -204,7 +204,7 @@ export default function App() {
               )}
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-px bg-border">
                 {filtered.map(obs => (
-                  <div key={obs.id} className="bg-bg">
+                  <div key={obs.id} className="bg-bg flex flex-col">
                     <ObservationCard obs={obs} onClick={setSelectedObs} />
                   </div>
                 ))}
