@@ -5,7 +5,6 @@ import { extractPendingItems } from './lib/parsePending'
 import { StatCard } from './components/StatCard'
 import { ObservationCard } from './components/ObservationCard'
 import { ObservationModal } from './components/ObservationModal'
-import { TypeBadge } from './components/TypeBadge'
 import { TypeChart } from './components/TypeChart'
 import { SessionsView } from './components/SessionsView'
 import './index.css'
@@ -182,48 +181,24 @@ export default function App() {
           )}
         </header>
 
-        {/* Stats + Chart */}
+        {/* Stats */}
         {stats && (
-          <div className="px-6 py-3 grid grid-cols-4 gap-3 border-b border-zinc-100 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50">
+          <div className="px-6 py-3 grid grid-cols-3 gap-3 border-b border-zinc-100 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50">
             <StatCard label="Sesiones" value={stats.total_sessions} />
             <StatCard label="Observaciones" value={stats.total_observations} />
             <StatCard label="Prompts" value={stats.total_prompts} />
-            <TypeChart observations={baseList} onTypeClick={handleTypeClick} />
           </div>
         )}
 
-        {/* Type filters */}
+        {/* Chart — full width, below stats */}
         {activeTab === 'observaciones' && (
-          <div className="px-6 py-3 flex flex-wrap gap-2 border-b border-zinc-100 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/30">
-            <button
-              onClick={() => setSelectedType('')}
-              className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                !selectedType
-                  ? 'border-zinc-900 dark:border-zinc-200 text-zinc-900 dark:text-zinc-200 font-medium'
-                  : 'border-zinc-200 dark:border-zinc-600 text-zinc-500 hover:border-zinc-400'
-              }`}
-            >
-              todos ({baseList.length})
-            </button>
-            {allTypes.map(type => {
-              const count = baseList.filter(o => o.type === type).length
-              if (count === 0) return null
-              return (
-                <button
-                  key={type}
-                  onClick={() => setSelectedType(t => t === type ? '' : type)}
-                  className={`flex items-center gap-1.5 text-xs px-3 py-1 rounded-full border transition-colors ${
-                    selectedType === type
-                      ? 'border-zinc-900 dark:border-zinc-200 font-medium'
-                      : 'border-zinc-200 dark:border-zinc-600 text-zinc-500 hover:border-zinc-400'
-                  }`}
-                >
-                  <TypeBadge type={type} /> ({count})
-                </button>
-              )
-            })}
-          </div>
+          <TypeChart
+            observations={baseList}
+            selectedType={selectedType}
+            onTypeClick={handleTypeClick}
+          />
         )}
+
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
