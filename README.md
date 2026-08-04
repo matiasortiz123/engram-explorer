@@ -7,18 +7,36 @@ Web UI para explorar la memoria local de [Engram](https://github.com/Gentleman-P
 - Node.js 18+
 - [Engram](https://github.com/Gentleman-Programming/engram) instalado
 
-## Cómo levantar
+## Pasos para levantar
 
+**1. Clonar el repo**
 ```bash
-# 1. En una terminal: levantar Engram
-engram serve
+git clone https://github.com/matiasortiz123/engram-explorer.git
+cd engram-explorer
+```
 
-# 2. En otra terminal: levantar la app
+**2. Instalar dependencias**
+```bash
 npm install
+```
+
+**3. Abrir dos terminales**
+
+Terminal 1 — levantar Engram (desde cualquier carpeta):
+```bash
+engram serve
+```
+
+Terminal 2 — levantar la app (desde la carpeta `engram-explorer`):
+```bash
 npm run dev
 ```
 
-Abrí `http://localhost:5173` en el browser.
+**4. Abrir el browser**
+
+Entrá a `http://localhost:5173`
+
+> Ambas terminales tienen que estar corriendo al mismo tiempo para que la app funcione.
 
 ## Stack
 
