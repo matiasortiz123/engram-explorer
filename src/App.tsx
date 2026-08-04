@@ -1,21 +1,27 @@
-import { useEffect, useState, useMemo } from 'react'
-import type { Observation, Stats, PendingItem } from './types/engram'
-import { fetchStats, fetchObservations, searchObservations } from './api/engram'
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import type { Observation, Session, Stats, PendingItem } from './types/engram'
+import { fetchStats, fetchObservations, fetchSessions, searchObservations } from './api/engram'
 import { extractPendingItems } from './lib/parsePending'
 import { StatCard } from './components/StatCard'
 import { ObservationCard } from './components/ObservationCard'
+import { ObservationModal } from './components/ObservationModal'
 import { TypeBadge } from './components/TypeBadge'
+import { TypeChart } from './components/TypeChart'
+import { SessionsView } from './components/SessionsView'
 import './index.css'
 
-type Tab = 'observaciones' | 'pendientes'
+type Tab = 'observaciones' | 'sesiones' | 'pendientes'
 
 const ALL_PROJECTS = 'Todos'
+const REFRESH_INTERVAL = 30_000
 
 export default function App() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [observations, setObservations] = useState<Observation[]>([])
+  const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
 
   const [activeTab, setActiveTab] = useState<Tab>('observaciones')
   const [selectedProject, setSelectedProject] = useState(ALL_PROJECTS)
@@ -23,16 +29,28 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<Observation[] | null>(null)
   const [searching, setSearching] = useState(false)
+  const [selectedObs, setSelectedObs] = useState<Observation | null>(null)
+
+  const loadData = useCallback(async () => {
+    try {
+      const [s, obs, sess] = await Promise.all([fetchStats(), fetchObservations(), fetchSessions()])
+      setStats(s)
+      setObservations(obs)
+      setSessions(sess)
+      setLastRefresh(new Date())
+      setError(null)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    Promise.all([fetchStats(), fetchObservations()])
-      .then(([s, obs]) => {
-        setStats(s)
-        setObservations(obs)
-      })
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false))
-  }, [])
+    loadData()
+    const interval = setInterval(loadData, REFRESH_INTERVAL)
+    return () => clearInterval(interval)
+  }, [loadData])
 
   const projects = stats ? [ALL_PROJECTS, ...stats.projects] : [ALL_PROJECTS]
 
@@ -41,32 +59,45 @@ export default function App() {
     return types.sort()
   }, [observations])
 
+  const baseList = useMemo(() => {
+    const list = searchResults ?? observations
+    return selectedProject === ALL_PROJECTS ? list : list.filter(o => o.project === selectedProject)
+  }, [observations, searchResults, selectedProject])
+
   const filtered = useMemo(() => {
-    let list = searchResults ?? observations
-    if (selectedProject !== ALL_PROJECTS) list = list.filter(o => o.project === selectedProject)
-    if (selectedType) list = list.filter(o => o.type === selectedType)
-    return list
-  }, [observations, searchResults, selectedProject, selectedType])
+    return selectedType ? baseList.filter(o => o.type === selectedType) : baseList
+  }, [baseList, selectedType])
 
   const pendingItems = useMemo((): PendingItem[] => {
-    const list = selectedProject !== ALL_PROJECTS
-      ? observations.filter(o => o.project === selectedProject)
-      : observations
+    const list = selectedProject === ALL_PROJECTS
+      ? observations
+      : observations.filter(o => o.project === selectedProject)
     return extractPendingItems(list)
   }, [observations, selectedProject])
+
+  const pendingByProject = useMemo(() => {
+    return pendingItems.reduce<Record<string, PendingItem[]>>((acc, item) => {
+      acc[item.project] = [...(acc[item.project] ?? []), item]
+      return acc
+    }, {})
+  }, [pendingItems])
 
   async function handleSearch(q: string) {
     setSearchQuery(q)
     if (!q.trim()) { setSearchResults(null); return }
     setSearching(true)
     try {
-      const results = await searchObservations(q)
-      setSearchResults(results)
+      setSearchResults(await searchObservations(q))
     } catch {
       setSearchResults([])
     } finally {
       setSearching(false)
     }
+  }
+
+  function handleTypeClick(type: string) {
+    setActiveTab('observaciones')
+    setSelectedType(t => t === type ? '' : type)
   }
 
   if (loading) return (
@@ -93,7 +124,7 @@ export default function App() {
         </div>
 
         <nav className="p-2 flex flex-col gap-1">
-          {(['observaciones', 'pendientes'] as Tab[]).map(tab => (
+          {(['observaciones', 'sesiones', 'pendientes'] as Tab[]).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -126,17 +157,19 @@ export default function App() {
             ))}
           </div>
         </div>
+
+        <div className="mt-auto p-3 border-t border-zinc-100 dark:border-zinc-700">
+          <p className="text-xs text-zinc-400">
+            Actualizado {lastRefresh.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+          </p>
+        </div>
       </aside>
 
       {/* Main */}
       <main className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 px-6 py-4 flex items-center justify-between gap-4">
           <h1 className="text-base font-semibold text-zinc-900 dark:text-white capitalize">
-            {activeTab === 'pendientes'
-              ? 'Pendientes'
-              : selectedProject === ALL_PROJECTS
-                ? 'Todas las observaciones'
-                : selectedProject}
+            {activeTab === 'pendientes' ? 'Pendientes' : activeTab === 'sesiones' ? 'Sesiones' : selectedProject === ALL_PROJECTS ? 'Todas las observaciones' : selectedProject}
           </h1>
           {activeTab === 'observaciones' && (
             <input
@@ -149,14 +182,17 @@ export default function App() {
           )}
         </header>
 
+        {/* Stats + Chart */}
         {stats && (
-          <div className="px-6 py-3 grid grid-cols-3 gap-3 border-b border-zinc-100 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50">
+          <div className="px-6 py-3 grid grid-cols-4 gap-3 border-b border-zinc-100 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50">
             <StatCard label="Sesiones" value={stats.total_sessions} />
             <StatCard label="Observaciones" value={stats.total_observations} />
             <StatCard label="Prompts" value={stats.total_prompts} />
+            <TypeChart observations={baseList} onTypeClick={handleTypeClick} />
           </div>
         )}
 
+        {/* Type filters */}
         {activeTab === 'observaciones' && (
           <div className="px-6 py-3 flex flex-wrap gap-2 border-b border-zinc-100 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/30">
             <button
@@ -167,12 +203,10 @@ export default function App() {
                   : 'border-zinc-200 dark:border-zinc-600 text-zinc-500 hover:border-zinc-400'
               }`}
             >
-              todos ({filtered.length})
+              todos ({baseList.length})
             </button>
             {allTypes.map(type => {
-              const count = (searchResults ?? observations).filter(
-                o => o.type === type && (selectedProject === ALL_PROJECTS || o.project === selectedProject)
-              ).length
+              const count = baseList.filter(o => o.type === type).length
               if (count === 0) return null
               return (
                 <button
@@ -191,6 +225,7 @@ export default function App() {
           </div>
         )}
 
+        {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === 'observaciones' && (
             <>
@@ -200,7 +235,7 @@ export default function App() {
               )}
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filtered.map(obs => (
-                  <ObservationCard key={obs.id} obs={obs} />
+                  <ObservationCard key={obs.id} obs={obs} onClick={setSelectedObs} />
                 ))}
               </div>
               {filtered.length === 0 && (
@@ -209,26 +244,32 @@ export default function App() {
             </>
           )}
 
+          {activeTab === 'sesiones' && (
+            <SessionsView sessions={sessions} selectedProject={selectedProject} />
+          )}
+
           {activeTab === 'pendientes' && (
-            <div className="max-w-2xl flex flex-col gap-3">
+            <div className="flex flex-col gap-8 max-w-2xl">
               {pendingItems.length === 0 ? (
                 <p className="text-zinc-400 text-sm">No se encontraron next steps en los session summaries.</p>
               ) : (
-                pendingItems.map((item, i) => (
-                  <div
-                    key={i}
-                    className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 flex items-start gap-3"
-                  >
-                    <div className="mt-0.5 w-4 h-4 shrink-0 rounded border-2 border-zinc-300 dark:border-zinc-600" />
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm text-zinc-800 dark:text-zinc-200">{item.text}</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-blue-500 font-medium">{item.project}</span>
-                        <span className="text-xs text-zinc-400">
-                          {new Date(item.date).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}
-                        </span>
+                Object.entries(pendingByProject).map(([project, items]) => (
+                  <div key={project} className="flex flex-col gap-3">
+                    <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">{project}</h2>
+                    {items.map((item, i) => (
+                      <div
+                        key={i}
+                        className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 flex items-start gap-3"
+                      >
+                        <div className="mt-0.5 w-4 h-4 shrink-0 rounded border-2 border-zinc-300 dark:border-zinc-600" />
+                        <div className="flex flex-col gap-1">
+                          <p className="text-sm text-zinc-800 dark:text-zinc-200">{item.text}</p>
+                          <span className="text-xs text-zinc-400">
+                            {new Date(item.date).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}
+                          </span>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 ))
               )}
@@ -236,6 +277,8 @@ export default function App() {
           )}
         </div>
       </main>
+
+      <ObservationModal obs={selectedObs} onClose={() => setSelectedObs(null)} />
     </div>
   )
 }
